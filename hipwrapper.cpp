@@ -1,7 +1,25 @@
 #include <hip/hip_runtime_api.h>
 #include <stdio.h>
 #include <dlfcn.h>
+#include <atomic>
+#include <unordered_map>
+#include <mutex>
 #include "hiptrace.h"
+
+
+static inline uint64_t next_id(){
+    static std::atomic<uint64_t> g{1};
+    return g.fetch_add(1, std::memory_order_relaxed);
+}
+
+struct CopyCtx {
+    uint64_t id;
+    size_t size;
+    hipMemcpyKind kind;
+    hipEvent_t start;
+};
+static std::unordered_map<hipEvent_t, CopyCtx> g_map;
+static std::mutex g_map_mtx;
 
 
 template<typename FuncType>
@@ -58,12 +76,55 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
     // Create a new id 
     // Get the current ns
 
+    hipEvent_t ev_start, ev_stop;
+    hipEventCreateWithFlags(&ev_start, hipEventDefault);
+    hipEventCreateWithFlags(&ev_stop, hipEventDisableTiming);
+
+    //We write the start event on the same stream right before the copy
+    hipEventRecord(ev_start, stream);
+
+    // We queue the copy
     hipError_t result = real(dst, src, size, kind, stream);
 
-    // create a stupid event that will fire the moment the 
-    tracepoint(hiptrace, hip_memcpy_async, dst, src, size, kind, stream, result);
+    //Record the stop event after the copy in the same stream.
+    hipEventRecord(ev_stop,stream);
+
+    //to remember the context
+    uint64_t id = next_id();
+    {
+        std::lock_guard lk(g_map_mtx);
+        g_map.emplace(ev_stop,CopyCtx{id, size, kind, ev_start});
+    }
+
+      // -------- host callback when stream reaches ev_stop ----------
+      hipStreamAddCallback(stream,
+        [](hipStream_t, hipError_t status, void* user) {
+            hipEvent_t ev_stop = (hipEvent_t)user;
+            CopyCtx ctx;
+            {
+                std::lock_guard lk(g_map_mtx);
+                ctx = g_map[ev_stop];
+                g_map.erase(ev_stop);
+            }
+
+            // GPU times: begin = 0 by default; we get only elapsed (μs)
+            float ms = 0.f;
+            hipEventElapsedTime(&ms, ctx.start, ev_stop);   // GPU clock
+            uint64_t dur_ns = static_cast<uint64_t>(ms * 1e6);
+
+            // Hip gives elapsed, not absolute; we only need Δ
+            tracepoint(hiptrace, hip_memcpy_async_span,
+                       ctx.id, ctx.size, ctx.kind, 0 /*begin*/,
+                       dur_ns /*end == begin+dur*/);
+
+            hipEventDestroy(ctx.start);
+            hipEventDestroy(ev_stop);
+        },
+        ev_stop,
+        0 /*flags*/);
     return result;
 }
+
 
 extern "C" hipError_t hipMemcpyWithStream(void* dst, const void* src, size_t size, hipMemcpyKind kind, hipStream_t stream) {
     using Fn = hipError_t (*)(void*, const void*, size_t, hipMemcpyKind, hipStream_t);

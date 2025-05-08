@@ -84,6 +84,24 @@ LTTNG_UST_TRACEPOINT_EVENT(
     )
 )
 
+
+LTTNG_UST_TRACEPOINT_EVENT(
+    hiptrace,
+    hip_memcpy_async_span,
+    LTTNG_UST_TP_ARGS(uint64_t, id,
+            size_t,   size,
+            int,      kind,
+            uint64_t, begin_gpu_ns,
+            uint64_t, end_gpu_ns),
+    TP_FIELDS(
+        lttng_ust_field_integer(uint64_t, id, id)
+        lttng_ust_field_integer(size_t,   size, size)
+        lttng_ust_field_integer(int,      kind, kind)
+        lttng_ust_field_integer(uint64_t, begin_gpu_ns, begin_gpu_ns)
+        lttng_ust_field_integer(uint64_t, end_gpu_ns,   end_gpu_ns)
+    )
+)
+
 LTTNG_UST_TRACEPOINT_EVENT(
     hiptrace,
     hip_memcpy,
