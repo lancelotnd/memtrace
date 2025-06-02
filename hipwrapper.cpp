@@ -69,7 +69,20 @@ extern "C" hipError_t hipMallocManaged(void** ptr, size_t size, unsigned int fla
 
 extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hipMemcpyKind kind, hipStream_t stream) {
     using Fn = hipError_t (*)(void*, const void*, size_t, hipMemcpyKind, hipStream_t);
-    static Fn real = load_symbol<Fn>("hipMemcpyAsync");
+    using Fn2 = hipError_t (*)(hipEvent_t*, unsigned int);
+    using Fn3 = hipError_t (*)(hipEvent_t, hipStream_t);
+    using Fn4 = hipError_t (*)(hipStream_t, hipStreamCallback_t, void*, unsigned int);
+    // hipEventElapsedTime
+    using Fn5 = hipError_t (*)(float*, hipEvent_t, hipEvent_t);
+    //EventDestroy
+    using Fn6 = hipError_t (*)(hipEvent_t);
+    
+    static Fn real =         load_symbol<Fn>("hipMemcpyAsync");
+    static Fn2 eventCreate = load_symbol<Fn2>("hipEventCreateWithFlags");
+    static Fn3 eventRecord = load_symbol<Fn3>("hipEventRecord");
+    static Fn4 streamAddCallback = load_symbol<Fn4>("hipStreamAddCallback");
+    static Fn5 eventElapsedTime = load_symbol<Fn5>("hipEventElapsedTime");
+    static Fn6 eventDestroy = load_symbol<Fn6>("hipEventDestroy");
 
     if (!real) return hipErrorUnknown;
 
@@ -77,17 +90,16 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
     // Get the current ns
 
     hipEvent_t ev_start, ev_stop;
-    hipEventCreateWithFlags(&ev_start, hipEventDefault);
-    hipEventCreateWithFlags(&ev_stop, hipEventDisableTiming);
-
+    eventCreate(&ev_start, hipEventDefault);
+    eventCreate(&ev_stop, hipEventDisableTiming);
     //We write the start event on the same stream right before the copy
-    hipEventRecord(ev_start, stream);
+    eventRecord(ev_start, stream);
 
     // We queue the copy
     hipError_t result = real(dst, src, size, kind, stream);
 
     //Record the stop event after the copy in the same stream.
-    hipEventRecord(ev_stop,stream);
+    eventRecord(ev_stop,stream);
 
     //to remember the context
     uint64_t id = next_id();
@@ -97,7 +109,7 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
     }
 
       // -------- host callback when stream reaches ev_stop ----------
-      hipStreamAddCallback(stream,
+      streamAddCallback(stream,
         [](hipStream_t, hipError_t status, void* user) {
             hipEvent_t ev_stop = (hipEvent_t)user;
             CopyCtx ctx;
@@ -109,7 +121,7 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
 
             // GPU times: begin = 0 by default; we get only elapsed (μs)
             float ms = 0.f;
-            hipEventElapsedTime(&ms, ctx.start, ev_stop);   // GPU clock
+            eventElapsedTime(&ms, ctx.start, ev_stop);   // GPU clock
             uint64_t dur_ns = static_cast<uint64_t>(ms * 1e6);
 
             // Hip gives elapsed, not absolute; we only need Δ
@@ -117,8 +129,8 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
                        ctx.id, ctx.size, ctx.kind, 0 /*begin*/,
                        dur_ns /*end == begin+dur*/);
 
-            hipEventDestroy(ctx.start);
-            hipEventDestroy(ev_stop);
+            eventDestroy(ctx.start);
+            eventDestroy(ev_stop);
         },
         ev_stop,
         0 /*flags*/);
