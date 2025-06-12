@@ -91,13 +91,14 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
 
     hipEvent_t ev_start, ev_stop;
     eventCreate(&ev_start, hipEventDefault);
-    eventCreate(&ev_stop, hipEventDisableTiming);
+    eventCreate(&ev_stop, hipEventDefault);
     //We write the start event on the same stream right before the copy
     eventRecord(ev_start, stream);
 
     // We queue the copy
     hipError_t result = real(dst, src, size, kind, stream);
 
+    hipStreamSynchronize(stream);
     //Record the stop event after the copy in the same stream.
     eventRecord(ev_stop,stream);
 

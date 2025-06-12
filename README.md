@@ -17,7 +17,7 @@ Compile the hipwrapper.cpp into a library and stores it into `/usr/local/wrap_hi
 
 ```sh
 g++ -fPIC -shared -o /usr/local/wrap_hip.so \
-    wrap10.cpp hiptrace.c \
+    hipwrapper.cpp hiptrace.c \
     -ldl -llttng-ust -rdynamic \
     -I. -I/opt/rocm/include \
     -L/usr/local/lib -Wl,-rpath,/usr/local/lib \
@@ -37,3 +37,10 @@ LTTNG_UST_ALLOW_BLOCKING=1 LTTNG_UST_APP_PATH="/home/users/lancend/mestraces" LT
 ```
 
 To export the CTF trace into json call `ctf2ctf <TRACE_DIRECTORY> > trace.json`. 
+
+
+LTTNG_UST_ALLOW_BLOCKING=1 LTTNG_UST_APP_PATH=/home/users/lancend/mestraces LTTNG_UST_DEBUG=1 LTTNG_UST_VERBOSE=1 LD_PRELOAD="/usr/local/lib/liblttng-ust-cyg-profile.so /usr/local/lib/liblttng-ust-libc-wrapper.so /usr/local/lib/libexatracer.so" python ~/matmul_strip.py
+
+LTTNG_UST_ALLOW_BLOCKING=1 LTTNG_UST_APP_PATH="/home/users/lancend/mestraces" LTTNG_UST_DEBUG=1 LTTNG_UST_VERBOSE=1 LD_PRELOAD="/usr/local/lib/liblttng-ust-libc-wrapper.so:/home/users/lancend/code/libexatracer.so" python ~/f5.py --model llama --train_batch_size=1 --eval_batch_size 1 --num_train_samples=1 --name sharding100
+
+
