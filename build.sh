@@ -1,0 +1,1 @@
+g++ -fPIC -shared -o /usr/local/wrap_hip.so hipwrapper.cpp hiptrace.c -ldl -llttng-ust -rdynamic -I. -I/opt/rocm/include -L/usr/local/lib -Wl,-rpath,/usr/local/lib -D__HIP_PLATFORM_AMD__
