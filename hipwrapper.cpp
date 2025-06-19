@@ -78,6 +78,7 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
     using Fn5 = hipError_t (*)(float*, hipEvent_t, hipEvent_t);
     //EventDestroy
     using Fn6 = hipError_t (*)(hipEvent_t);
+    using Fn7 = hipError_t (*)(hipStream_t);
     
     static Fn real =         load_symbol<Fn>("hipMemcpyAsync");
     static Fn2 eventCreate = load_symbol<Fn2>("hipEventCreateWithFlags");
