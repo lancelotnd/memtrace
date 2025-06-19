@@ -1,3 +1,4 @@
+conda activate unidev
 mydate=$(date +"%b%d-%H%M" | tr '[:upper:]' '[:lower:]')
 lttng destroy
 lttng create $mydate

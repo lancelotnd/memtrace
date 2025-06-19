@@ -85,6 +85,7 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
     static Fn4 streamAddCallback = load_symbol<Fn4>("hipStreamAddCallback");
     static Fn5 eventElapsedTime = load_symbol<Fn5>("hipEventElapsedTime");
     static Fn6 eventDestroy = load_symbol<Fn6>("hipEventDestroy");
+    static Fn7 streamSynchronize = load_symbol<Fn7>("hipStreamSynchronize");
 
     if (!real) return hipErrorUnknown;
 
@@ -99,7 +100,7 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
     // We queue the copy
     hipError_t result = real(dst, src, size, kind, stream);
 
-    hipStreamSynchronize(stream);
+    streamSynchronize(stream);
     //Record the stop event after the copy in the same stream.
     eventRecord(ev_stop,stream);
 
