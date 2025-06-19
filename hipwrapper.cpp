@@ -143,6 +143,7 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
 
 
 extern "C" hipError_t hipMemcpyWithStream(void* dst, const void* src, size_t size, hipMemcpyKind kind, hipStream_t stream) {
+    //When the default stream is used, this is a blocking call.
     using Fn = hipError_t (*)(void*, const void*, size_t, hipMemcpyKind, hipStream_t);
     static Fn real = load_symbol<Fn>("hipMemcpyWithStream");
 
