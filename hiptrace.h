@@ -91,14 +91,16 @@ LTTNG_UST_TRACEPOINT_EVENT(
     LTTNG_UST_TP_ARGS(uint64_t, id,
             size_t,   size,
             int,      kind,
-            uint64_t, begin_gpu_ns,
-            uint64_t, end_gpu_ns),
+            const void*, src,
+            void*,    dst,
+            uint64_t, duration_ns),
     TP_FIELDS(
         lttng_ust_field_integer(uint64_t, id, id)
         lttng_ust_field_integer(size_t,   size, size)
         lttng_ust_field_integer(int,      kind, kind)
-        lttng_ust_field_integer(uint64_t, begin_gpu_ns, begin_gpu_ns)
-        lttng_ust_field_integer(uint64_t, end_gpu_ns,   end_gpu_ns)
+        lttng_ust_field_integer_hex(void*, src, src)
+        lttng_ust_field_integer_hex(void*, dst, dst)
+        lttng_ust_field_integer(uint64_t, duration_ns,   duration_ns)
     )
 )
 

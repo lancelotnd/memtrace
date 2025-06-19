@@ -1,7 +1,7 @@
 #include <hip/hip_runtime.h>
 #include <iostream>
 
-#define N 1024 // Size of the array
+#define N 1048576 // Size of the array
 
 // Check for errors
 #define HIP_CHECK(call) {                                      \
@@ -15,7 +15,12 @@
 
 int main() {
     // Allocate and initialize host memory
-    int h_data[N];
+    int *h_data = new(std::nothrow) int[N];
+    if (!h_data) {
+        std::cerr << "Host memory allocation failed!" << std::endl;
+        return -1;
+    }
+
     for (int i = 0; i < N; ++i) {
         h_data[i] = i;
     }
@@ -32,7 +37,11 @@ int main() {
     HIP_CHECK(hipMemcpyAsync(d_data, h_data, N * sizeof(int), hipMemcpyHostToDevice, stream));
 
     // Allocate memory to store data back on the host
-    int h_data_check[N];
+    int *h_data_check = new(std::nothrow) int[N];
+    if (!h_data_check) {
+        std::cerr << "Host memory allocation failed for h_data_check!" << std::endl;
+        return -1;
+    }
 
     // Copy data from device to host asynchronously
     HIP_CHECK(hipMemcpyAsync(h_data_check, d_data, N * sizeof(int), hipMemcpyDeviceToHost, stream));
@@ -44,7 +53,7 @@ int main() {
     for (int i = 0; i < N; ++i) {
         if (h_data_check[i] != h_data[i]) {
             std::cerr << "Data mismatch at index " << i << ": "
-                      << h_data_check[i] << " != " << h_data[i] << std::endl;
+                    << h_data_check[i] << " != " << h_data[i] << std::endl;
             return -1;
         }
     }
@@ -54,6 +63,9 @@ int main() {
     // Clean up
     HIP_CHECK(hipFree(d_data));
     HIP_CHECK(hipStreamDestroy(stream));
+
+    delete[] h_data;
+    delete[] h_data_check;
 
     return 0;
 }

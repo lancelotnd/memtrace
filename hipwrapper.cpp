@@ -17,6 +17,8 @@ struct CopyCtx {
     size_t size;
     hipMemcpyKind kind;
     hipEvent_t start;
+    const void* src;
+    void* dst;
 };
 static std::unordered_map<hipEvent_t, CopyCtx> g_map;
 static std::mutex g_map_mtx;
@@ -94,7 +96,6 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
     eventCreate(&ev_stop, hipEventDefault);
     //We write the start event on the same stream right before the copy
     eventRecord(ev_start, stream);
-
     // We queue the copy
     hipError_t result = real(dst, src, size, kind, stream);
 
@@ -106,7 +107,7 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
     uint64_t id = next_id();
     {
         std::lock_guard lk(g_map_mtx);
-        g_map.emplace(ev_stop,CopyCtx{id, size, kind, ev_start});
+        g_map.emplace(ev_stop,CopyCtx{id, size, kind, ev_start, src, dst});
     }
 
       // -------- host callback when stream reaches ev_stop ----------
@@ -127,7 +128,7 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
 
             // Hip gives elapsed, not absolute; we only need Δ
             tracepoint(hiptrace, hip_memcpy_async_span,
-                       ctx.id, ctx.size, ctx.kind, 0 /*begin*/,
+                       ctx.id, ctx.size, ctx.kind, ctx.src, ctx.dst,
                        dur_ns /*end == begin+dur*/);
 
             eventDestroy(ctx.start);
