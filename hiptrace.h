@@ -10,6 +10,7 @@
 
 #include <lttng/tracepoint.h>
 
+
 LTTNG_UST_TRACEPOINT_EVENT(
     hiptrace,
     hip_malloc,
@@ -65,7 +66,28 @@ LTTNG_UST_TRACEPOINT_EVENT(
 
 LTTNG_UST_TRACEPOINT_EVENT(
     hiptrace,
-    hip_memcpy_with_stream,
+    hip_memcpy_with_stream_begin,
+    LTTNG_UST_TP_ARGS(
+        void*, dst,
+        const void*, src,
+        size_t, size,
+        int, kind,
+        void*, stream,
+        int, result
+    ),
+    TP_FIELDS(
+        lttng_ust_field_integer_hex(void*, dst, dst)
+        lttng_ust_field_integer_hex(const void*, src, src)
+        lttng_ust_field_integer(size_t, size, size)
+        lttng_ust_field_integer(int, kind, kind)
+        lttng_ust_field_integer_hex(void*, stream, stream)
+        lttng_ust_field_integer(int, result, result)
+    )
+)
+
+LTTNG_UST_TRACEPOINT_EVENT(
+    hiptrace,
+    hip_memcpy_with_stream_end,
     LTTNG_UST_TP_ARGS(
         void*, dst,
         const void*, src,
