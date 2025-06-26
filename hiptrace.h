@@ -66,7 +66,7 @@ LTTNG_UST_TRACEPOINT_EVENT(
 
 LTTNG_UST_TRACEPOINT_EVENT(
     hiptrace,
-    hip_memcpy_with_stream_begin,
+    hip_memcpy_with_stream_entry,
     LTTNG_UST_TP_ARGS(
         void*, dst,
         const void*, src,
@@ -87,7 +87,7 @@ LTTNG_UST_TRACEPOINT_EVENT(
 
 LTTNG_UST_TRACEPOINT_EVENT(
     hiptrace,
-    hip_memcpy_with_stream_end,
+    hip_memcpy_with_stream_exit,
     LTTNG_UST_TP_ARGS(
         void*, dst,
         const void*, src,
