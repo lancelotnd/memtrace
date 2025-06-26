@@ -128,7 +128,7 @@ LTTNG_UST_TRACEPOINT_EVENT(
 
 LTTNG_UST_TRACEPOINT_EVENT(
     hiptrace,
-    hip_memcpy,
+    hip_memcpy_entry,
     LTTNG_UST_TP_ARGS(
         void*, dst,
         const void*, src,
@@ -147,7 +147,39 @@ LTTNG_UST_TRACEPOINT_EVENT(
 
 LTTNG_UST_TRACEPOINT_EVENT(
     hiptrace,
-    hip_free,
+    hip_memcpy_exit,
+    LTTNG_UST_TP_ARGS(
+        void*, dst,
+        const void*, src,
+        size_t, size,
+        int, kind,
+        int, result
+    ),
+    TP_FIELDS(
+        lttng_ust_field_integer_hex(void*, dst, dst)
+        lttng_ust_field_integer_hex(const void*, src, src)
+        lttng_ust_field_integer(size_t, size, size)
+        lttng_ust_field_integer(int, kind, kind)
+        lttng_ust_field_integer(int, result, result)
+    )
+)
+
+LTTNG_UST_TRACEPOINT_EVENT(
+    hiptrace,
+    hip_free_entry,
+    LTTNG_UST_TP_ARGS(
+        void*, ptr,
+        int, result
+    ),
+    TP_FIELDS(
+        lttng_ust_field_integer_hex(void*, ptr, ptr)
+        lttng_ust_field_integer(int, result, result)
+    )
+)
+
+LTTNG_UST_TRACEPOINT_EVENT(
+    hiptrace,
+    hip_free_exit,
     LTTNG_UST_TP_ARGS(
         void*, ptr,
         int, result
