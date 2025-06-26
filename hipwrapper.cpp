@@ -159,7 +159,7 @@ extern "C" hipError_t hipMemcpy(void* dst, const void* src, size_t size, hipMemc
     static Fn real = load_symbol<Fn>("hipMemcpy");
 
     if (!real) return hipErrorUnknown;
-    tracepoint(hiptrace, hip_memcpy_entry, dst, src, size, kind, result);
+    tracepoint(hiptrace, hip_memcpy_entry, dst, src, size, kind, 0);
     hipError_t result = real(dst, src, size, kind);
     tracepoint(hiptrace, hip_memcpy_exit, dst, src, size, kind, result);
     return result;
@@ -170,7 +170,7 @@ extern "C" hipError_t hipFree(void* ptr) {
     static Fn real = load_symbol<Fn>("hipFree");
 
     if (!real) return hipErrorUnknown;
-    tracepoint(hiptrace, hip_free_entry, ptr, result);
+    tracepoint(hiptrace, hip_free_entry, ptr, 0);
     hipError_t result = real(ptr);
     tracepoint(hiptrace, hip_free_exit, ptr, result);
     return result;
