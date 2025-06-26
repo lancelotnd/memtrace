@@ -149,7 +149,7 @@ extern "C" hipError_t hipMemcpyWithStream(void* dst, const void* src, size_t siz
 
     if (!real) return hipErrorUnknown;
 
-    tracepoint(hiptrace, hip_memcpy_with_stream_entry, dst, src, size, kind, stream, result);
+    tracepoint(hiptrace, hip_memcpy_with_stream_entry, dst, src, size, kind, stream, 0);
     hipError_t result = real(dst, src, size, kind, stream);
     tracepoint(hiptrace, hip_memcpy_with_stream_exit, dst, src, size, kind, stream, result);
     return result;
