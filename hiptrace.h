@@ -13,7 +13,22 @@
 
 LTTNG_UST_TRACEPOINT_EVENT(
     hiptrace,
-    hip_malloc,
+    hip_malloc_entry,
+    LTTNG_UST_TP_ARGS(
+        size_t, size,
+        void*, ptr,
+        int, result
+    ),
+    LTTNG_UST_TP_FIELDS(
+        lttng_ust_field_integer(size_t, size, size)
+        lttng_ust_field_integer_hex(void*, ptr, ptr)
+        lttng_ust_field_integer(int, result, result)
+    )
+)
+
+LTTNG_UST_TRACEPOINT_EVENT(
+    hiptrace,
+    hip_malloc_exit,
     LTTNG_UST_TP_ARGS(
         size_t, size,
         void*, ptr,

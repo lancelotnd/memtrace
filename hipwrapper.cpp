@@ -44,12 +44,12 @@ extern "C" hipError_t hipMalloc(void** ptr, size_t size) {
     static Fn real = load_symbol<Fn>("hipMalloc");
 
     if (!real) return hipErrorUnknown;
-
+    tracepoint(hiptrace, hip_malloc_entry, size, *ptr, 0);
     hipError_t result = real(ptr, size);
     if (result == hipSuccess) {
-        tracepoint(hiptrace, hip_malloc, size, *ptr, result);
+        tracepoint(hiptrace, hip_malloc_exit, size, *ptr, result);
     } else {
-        tracepoint(hiptrace, hip_malloc, size, nullptr, result);
+        tracepoint(hiptrace, hip_malloc_exit), size, nullptr, result);
     }
     return result;
 }
