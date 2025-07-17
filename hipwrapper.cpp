@@ -49,7 +49,7 @@ extern "C" hipError_t hipMalloc(void** ptr, size_t size) {
     if (result == hipSuccess) {
         tracepoint(hiptrace, hip_malloc_exit, size, *ptr, result);
     } else {
-        tracepoint(hiptrace, hip_malloc_exit), size, nullptr, result);
+        tracepoint(hiptrace, hip_malloc_exit, size, nullptr, result);
     }
     return result;
 }
