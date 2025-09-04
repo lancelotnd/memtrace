@@ -1,13 +1,17 @@
+# filepath: [lttng-start.sh](http://_vscodecontentref_/0)
 #!/usr/bin/env bash
 set -euo pipefail
 
 conda activate unidev
 mydate=$(date +"%b%d-%H%M" | tr '[:upper:]' '[:lower:]')
 
-# Ensure a clean sessiond, then let lttng auto-spawn it with default ~/.lttng
+export LTTNG_HOME="$HOME/mestraces"                # sessiond base dir
+export LTTNG_UST_APP_PATH="$LTTNG_HOME/.lttng"     # apps socket dir
+mkdir -p "$LTTNG_UST_APP_PATH"
+
 pkill -u "$USER" -f lttng-sessiond || true
-unset LTTNG_UST_APP_PATH
-unset LTTNG_HOME
+# Start sessiond manually to be explicit (inherits env)
+lttng-sessiond -d
 
 lttng destroy || true
 lttng create "$mydate"
