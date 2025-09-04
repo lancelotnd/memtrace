@@ -26,18 +26,22 @@ static std::mutex g_map_mtx;
 // Helpers to get device/memory info
 static inline int current_device() {
     int d = -1;
-    hipGetDevice(&d);
+    if (hipGetDevice(&d) != hipSuccess) return -1;
     return d;
 }
 
 static inline int pointer_device(const void* p, hipMemoryType* memTypeOut = nullptr) {
-    hipPointerAttribute_t attr{};
-    if (p && hipPointerGetAttributes(&attr, p) == hipSuccess) {
-        if (memTypeOut) *memTypeOut = attr.memoryType;
-        return attr.device; // -1 for host/unowned
+    if (!p) {
+        if (memTypeOut) *memTypeOut = hipMemoryTypeHost;
+        return -1;
     }
-    if (memTypeOut) *memTypeOut = hipMemoryTypeHost;
-    return -1;
+    int dev = -1;
+    int mtInt = (int)hipMemoryTypeHost;
+    // Query device ordinal and memory type via attribute API (works across HIP versions)
+    (void)hipPointerGetAttribute(&dev, HIP_POINTER_ATTRIBUTE_DEVICE_ORDINAL, p);
+    (void)hipPointerGetAttribute(&mtInt, HIP_POINTER_ATTRIBUTE_MEMORY_TYPE, p);
+    if (memTypeOut) *memTypeOut = static_cast<hipMemoryType>(mtInt);
+    return dev;
 }
 
 
