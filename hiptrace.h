@@ -17,12 +17,14 @@ LTTNG_UST_TRACEPOINT_EVENT(
     LTTNG_UST_TP_ARGS(
         size_t, size,
         void*, ptr,
-        int, result
+    int, result,
+    int, cur_dev
     ),
     LTTNG_UST_TP_FIELDS(
         lttng_ust_field_integer(size_t, size, size)
         lttng_ust_field_integer_hex(void*, ptr, ptr)
         lttng_ust_field_integer(int, result, result)
+    lttng_ust_field_integer(int, cur_dev, cur_dev)
     )
 )
 
@@ -32,12 +34,14 @@ LTTNG_UST_TRACEPOINT_EVENT(
     LTTNG_UST_TP_ARGS(
         size_t, size,
         void*, ptr,
-        int, result
+    int, result,
+    int, owner_dev
     ),
     LTTNG_UST_TP_FIELDS(
         lttng_ust_field_integer(size_t, size, size)
         lttng_ust_field_integer_hex(void*, ptr, ptr)
         lttng_ust_field_integer(int, result, result)
+    lttng_ust_field_integer(int, owner_dev, owner_dev)
     )
 )
 
@@ -48,13 +52,17 @@ LTTNG_UST_TRACEPOINT_EVENT(
         size_t, size,
         void*, ptr,
         unsigned int, flags,
-        int, result
+    int, result,
+    int, cur_dev,
+    int, owner_dev
     ),
     LTTNG_UST_TP_FIELDS(
         lttng_ust_field_integer(size_t, size, size)
         lttng_ust_field_integer_hex(void*, ptr, ptr)
         lttng_ust_field_integer(unsigned int, flags, flags)
         lttng_ust_field_integer(int, result, result)
+    lttng_ust_field_integer(int, cur_dev, cur_dev)
+    lttng_ust_field_integer(int, owner_dev, owner_dev)
     )
 )
 
@@ -88,7 +96,11 @@ LTTNG_UST_TRACEPOINT_EVENT(
         size_t, size,
         int, kind,
         void*, stream,
-        int, result
+    int, result,
+    int, src_dev,
+    int, dst_dev,
+    int, src_type,
+    int, dst_type
     ),
     TP_FIELDS(
         lttng_ust_field_integer_hex(void*, dst, dst)
@@ -97,6 +109,10 @@ LTTNG_UST_TRACEPOINT_EVENT(
         lttng_ust_field_integer(int, kind, kind)
         lttng_ust_field_integer_hex(void*, stream, stream)
         lttng_ust_field_integer(int, result, result)
+    lttng_ust_field_integer(int, src_dev, src_dev)
+    lttng_ust_field_integer(int, dst_dev, dst_dev)
+    lttng_ust_field_integer(int, src_type, src_type)
+    lttng_ust_field_integer(int, dst_type, dst_type)
     )
 )
 
@@ -109,7 +125,11 @@ LTTNG_UST_TRACEPOINT_EVENT(
         size_t, size,
         int, kind,
         void*, stream,
-        int, result
+    int, result,
+    int, src_dev,
+    int, dst_dev,
+    int, src_type,
+    int, dst_type
     ),
     TP_FIELDS(
         lttng_ust_field_integer_hex(void*, dst, dst)
@@ -118,6 +138,10 @@ LTTNG_UST_TRACEPOINT_EVENT(
         lttng_ust_field_integer(int, kind, kind)
         lttng_ust_field_integer_hex(void*, stream, stream)
         lttng_ust_field_integer(int, result, result)
+    lttng_ust_field_integer(int, src_dev, src_dev)
+    lttng_ust_field_integer(int, dst_dev, dst_dev)
+    lttng_ust_field_integer(int, src_type, src_type)
+    lttng_ust_field_integer(int, dst_type, dst_type)
     )
 )
 
@@ -130,7 +154,11 @@ LTTNG_UST_TRACEPOINT_EVENT(
             int,      kind,
             const void*, src,
             void*,    dst,
-            uint64_t, duration_ns),
+            uint64_t, duration_ns,
+            int,      src_dev,
+            int,      dst_dev,
+            int,      src_type,
+            int,      dst_type),
     TP_FIELDS(
         lttng_ust_field_integer(uint64_t, id, id)
         lttng_ust_field_integer(size_t,   size, size)
@@ -138,6 +166,10 @@ LTTNG_UST_TRACEPOINT_EVENT(
         lttng_ust_field_integer_hex(const void*, src, src)
         lttng_ust_field_integer_hex(void*, dst, dst)
         lttng_ust_field_integer(uint64_t, duration_ns,   duration_ns)
+        lttng_ust_field_integer(int,      src_dev, src_dev)
+        lttng_ust_field_integer(int,      dst_dev, dst_dev)
+        lttng_ust_field_integer(int,      src_type, src_type)
+        lttng_ust_field_integer(int,      dst_type, dst_type)
     )
 )
 
@@ -149,7 +181,11 @@ LTTNG_UST_TRACEPOINT_EVENT(
         const void*, src,
         size_t, size,
         int, kind,
-        int, result
+    int, result,
+    int, src_dev,
+    int, dst_dev,
+    int, src_type,
+    int, dst_type
     ),
     TP_FIELDS(
         lttng_ust_field_integer_hex(void*, dst, dst)
@@ -157,6 +193,10 @@ LTTNG_UST_TRACEPOINT_EVENT(
         lttng_ust_field_integer(size_t, size, size)
         lttng_ust_field_integer(int, kind, kind)
         lttng_ust_field_integer(int, result, result)
+    lttng_ust_field_integer(int, src_dev, src_dev)
+    lttng_ust_field_integer(int, dst_dev, dst_dev)
+    lttng_ust_field_integer(int, src_type, src_type)
+    lttng_ust_field_integer(int, dst_type, dst_type)
     )
 )
 
@@ -168,7 +208,11 @@ LTTNG_UST_TRACEPOINT_EVENT(
         const void*, src,
         size_t, size,
         int, kind,
-        int, result
+    int, result,
+    int, src_dev,
+    int, dst_dev,
+    int, src_type,
+    int, dst_type
     ),
     TP_FIELDS(
         lttng_ust_field_integer_hex(void*, dst, dst)
@@ -176,6 +220,10 @@ LTTNG_UST_TRACEPOINT_EVENT(
         lttng_ust_field_integer(size_t, size, size)
         lttng_ust_field_integer(int, kind, kind)
         lttng_ust_field_integer(int, result, result)
+    lttng_ust_field_integer(int, src_dev, src_dev)
+    lttng_ust_field_integer(int, dst_dev, dst_dev)
+    lttng_ust_field_integer(int, src_type, src_type)
+    lttng_ust_field_integer(int, dst_type, dst_type)
     )
 )
 
@@ -184,11 +232,13 @@ LTTNG_UST_TRACEPOINT_EVENT(
     hip_free_entry,
     LTTNG_UST_TP_ARGS(
         void*, ptr,
-        int, result
+    int, result,
+    int, owner_dev
     ),
     TP_FIELDS(
         lttng_ust_field_integer_hex(void*, ptr, ptr)
         lttng_ust_field_integer(int, result, result)
+    lttng_ust_field_integer(int, owner_dev, owner_dev)
     )
 )
 
@@ -197,11 +247,13 @@ LTTNG_UST_TRACEPOINT_EVENT(
     hip_free_exit,
     LTTNG_UST_TP_ARGS(
         void*, ptr,
-        int, result
+    int, result,
+    int, owner_dev
     ),
     TP_FIELDS(
         lttng_ust_field_integer_hex(void*, ptr, ptr)
         lttng_ust_field_integer(int, result, result)
+    lttng_ust_field_integer(int, owner_dev, owner_dev)
     )
 )
 

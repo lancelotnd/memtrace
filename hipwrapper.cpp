@@ -23,6 +23,23 @@ struct CopyCtx {
 static std::unordered_map<hipEvent_t, CopyCtx> g_map;
 static std::mutex g_map_mtx;
 
+// Helpers to get device/memory info
+static inline int current_device() {
+    int d = -1;
+    hipGetDevice(&d);
+    return d;
+}
+
+static inline int pointer_device(const void* p, hipMemoryType* memTypeOut = nullptr) {
+    hipPointerAttribute_t attr{};
+    if (p && hipPointerGetAttributes(&attr, p) == hipSuccess) {
+        if (memTypeOut) *memTypeOut = attr.memoryType;
+        return attr.device; // -1 for host/unowned
+    }
+    if (memTypeOut) *memTypeOut = hipMemoryTypeHost;
+    return -1;
+}
+
 
 template<typename FuncType>
 FuncType load_symbol(const char* name) {
@@ -44,12 +61,16 @@ extern "C" hipError_t hipMalloc(void** ptr, size_t size) {
     static Fn real = load_symbol<Fn>("hipMalloc");
 
     if (!real) return hipErrorUnknown;
-    tracepoint(hiptrace, hip_malloc_entry, size, *ptr, 0);
+    // At entry, ptr is not yet set; also record current device ordinal
+    const int cur_dev = current_device();
+    tracepoint(hiptrace, hip_malloc_entry, size, nullptr, 0, cur_dev);
     hipError_t result = real(ptr, size);
     if (result == hipSuccess) {
-        tracepoint(hiptrace, hip_malloc_exit, size, *ptr, result);
+        const int owner_dev = pointer_device(*ptr);
+        tracepoint(hiptrace, hip_malloc_exit, size, *ptr, result, owner_dev);
     } else {
-        tracepoint(hiptrace, hip_malloc_exit, size, nullptr, result);
+        const int owner_dev = -1;
+        tracepoint(hiptrace, hip_malloc_exit, size, nullptr, result, owner_dev);
     }
     return result;
 }
@@ -60,11 +81,14 @@ extern "C" hipError_t hipMallocManaged(void** ptr, size_t size, unsigned int fla
 
     if (!real) return hipErrorUnknown;
 
+    const int cur_dev = current_device();
     hipError_t result = real(ptr, size, flags);
     if (result == hipSuccess) {
-        tracepoint(hiptrace, hip_malloc_managed, size, *ptr, flags, result);
+        const int owner_dev = pointer_device(*ptr);
+        tracepoint(hiptrace, hip_malloc_managed, size, *ptr, flags, result, cur_dev, owner_dev);
     } else {
-        tracepoint(hiptrace, hip_malloc_managed, size, nullptr, flags, result);
+        const int owner_dev = -1;
+        tracepoint(hiptrace, hip_malloc_managed, size, nullptr, flags, result, cur_dev, owner_dev);
     }
     return result;
 }
@@ -128,9 +152,12 @@ extern "C" hipError_t hipMemcpyAsync(void* dst, const void* src, size_t size, hi
             uint64_t dur_ns = static_cast<uint64_t>(ms * 1e6);
 
             // Hip gives elapsed, not absolute; we only need Δ
+            hipMemoryType srcType{}, dstType{};
+            int srcDev = pointer_device(ctx.src, &srcType);
+            int dstDev = pointer_device(ctx.dst, &dstType);
             tracepoint(hiptrace, hip_memcpy_async_span,
                        ctx.id, ctx.size, ctx.kind, ctx.src, ctx.dst,
-                       dur_ns /*end == begin+dur*/);
+                       dur_ns /*end == begin+dur*/, srcDev, dstDev, (int)srcType, (int)dstType);
 
             eventDestroy(ctx.start);
             eventDestroy(ev_stop);
@@ -148,9 +175,14 @@ extern "C" hipError_t hipMemcpyWithStream(void* dst, const void* src, size_t siz
 
     if (!real) return hipErrorUnknown;
 
-    tracepoint(hiptrace, hip_memcpy_with_stream_entry, dst, src, size, kind, stream, 0);
+    hipMemoryType srcType{}, dstType{};
+    int srcDev = pointer_device(src, &srcType);
+    int dstDev = pointer_device(dst, &dstType);
+    tracepoint(hiptrace, hip_memcpy_with_stream_entry, dst, src, size, kind, stream, 0,
+               srcDev, dstDev, (int)srcType, (int)dstType);
     hipError_t result = real(dst, src, size, kind, stream);
-    tracepoint(hiptrace, hip_memcpy_with_stream_exit, dst, src, size, kind, stream, result);
+    tracepoint(hiptrace, hip_memcpy_with_stream_exit, dst, src, size, kind, stream, result,
+               srcDev, dstDev, (int)srcType, (int)dstType);
     return result;
 }
 
@@ -159,9 +191,14 @@ extern "C" hipError_t hipMemcpy(void* dst, const void* src, size_t size, hipMemc
     static Fn real = load_symbol<Fn>("hipMemcpy");
 
     if (!real) return hipErrorUnknown;
-    tracepoint(hiptrace, hip_memcpy_entry, dst, src, size, kind, 0);
+    hipMemoryType srcType{}, dstType{};
+    int srcDev = pointer_device(src, &srcType);
+    int dstDev = pointer_device(dst, &dstType);
+    tracepoint(hiptrace, hip_memcpy_entry, dst, src, size, kind, 0,
+               srcDev, dstDev, (int)srcType, (int)dstType);
     hipError_t result = real(dst, src, size, kind);
-    tracepoint(hiptrace, hip_memcpy_exit, dst, src, size, kind, result);
+    tracepoint(hiptrace, hip_memcpy_exit, dst, src, size, kind, result,
+               srcDev, dstDev, (int)srcType, (int)dstType);
     return result;
 }
 
@@ -170,8 +207,10 @@ extern "C" hipError_t hipFree(void* ptr) {
     static Fn real = load_symbol<Fn>("hipFree");
 
     if (!real) return hipErrorUnknown;
-    tracepoint(hiptrace, hip_free_entry, ptr, 0);
+    // capture owner device/type before free
+    const int owner_dev = pointer_device(ptr);
+    tracepoint(hiptrace, hip_free_entry, ptr, 0, owner_dev);
     hipError_t result = real(ptr);
-    tracepoint(hiptrace, hip_free_exit, ptr, result);
+    tracepoint(hiptrace, hip_free_exit, ptr, result, owner_dev);
     return result;
 }
