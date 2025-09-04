@@ -23,7 +23,23 @@ struct CopyCtx {
 static std::unordered_map<hipEvent_t, CopyCtx> g_map;
 static std::mutex g_map_mtx;
 
-// Helpers to get device/memory info
+
+template<typename FuncType>
+FuncType load_symbol(const char* name) {
+    static void* handle = dlopen("libamdhip64.so", RTLD_LAZY);
+    if (!handle) {
+        fprintf(stderr, "dlopen failed: %s\n", dlerror());
+        return nullptr;
+    }
+    void* sym = dlsym(handle, name);
+    if (!sym) {
+        fprintf(stderr, "dlsym failed for %s: %s\n", name, dlerror());
+        return nullptr;
+    }
+    return reinterpret_cast<FuncType>(sym);
+}
+
+// Helpers to get device/memory info (placed after load_symbol so we can use it)
 static inline int current_device() {
     int d = -1;
     using Fn = hipError_t (*)(int*);
@@ -40,7 +56,6 @@ static inline int pointer_device(const void* p, hipMemoryType* memTypeOut = null
     }
     int dev = -1;
     int mtInt = (int)hipMemoryTypeHost;
-    // Query device ordinal and memory type via attribute API (works across HIP versions)
     using Fn = hipError_t (*)(void*, hipPointer_attribute, void*);
     static Fn hipPointerGetAttribute_fn = load_symbol<Fn>("hipPointerGetAttribute");
     if (!hipPointerGetAttribute_fn) {
@@ -51,22 +66,6 @@ static inline int pointer_device(const void* p, hipMemoryType* memTypeOut = null
     (void)hipPointerGetAttribute_fn(&mtInt, HIP_POINTER_ATTRIBUTE_MEMORY_TYPE, const_cast<void*>(p));
     if (memTypeOut) *memTypeOut = static_cast<hipMemoryType>(mtInt);
     return dev;
-}
-
-
-template<typename FuncType>
-FuncType load_symbol(const char* name) {
-    static void* handle = dlopen("libamdhip64.so", RTLD_LAZY);
-    if (!handle) {
-        fprintf(stderr, "dlopen failed: %s\n", dlerror());
-        return nullptr;
-    }
-    void* sym = dlsym(handle, name);
-    if (!sym) {
-        fprintf(stderr, "dlsym failed for %s: %s\n", name, dlerror());
-        return nullptr;
-    }
-    return reinterpret_cast<FuncType>(sym);
 }
 
 extern "C" hipError_t hipMalloc(void** ptr, size_t size) {
