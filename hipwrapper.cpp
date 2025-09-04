@@ -26,7 +26,10 @@ static std::mutex g_map_mtx;
 // Helpers to get device/memory info
 static inline int current_device() {
     int d = -1;
-    if (hipGetDevice(&d) != hipSuccess) return -1;
+    using Fn = hipError_t (*)(int*);
+    static Fn hipGetDevice_fn = load_symbol<Fn>("hipGetDevice");
+    if (!hipGetDevice_fn) return -1;
+    if (hipGetDevice_fn(&d) != hipSuccess) return -1;
     return d;
 }
 
@@ -38,8 +41,14 @@ static inline int pointer_device(const void* p, hipMemoryType* memTypeOut = null
     int dev = -1;
     int mtInt = (int)hipMemoryTypeHost;
     // Query device ordinal and memory type via attribute API (works across HIP versions)
-    (void)hipPointerGetAttribute(&dev, HIP_POINTER_ATTRIBUTE_DEVICE_ORDINAL, const_cast<void*>(p));
-    (void)hipPointerGetAttribute(&mtInt, HIP_POINTER_ATTRIBUTE_MEMORY_TYPE, const_cast<void*>(p));
+    using Fn = hipError_t (*)(void*, hipPointer_attribute, void*);
+    static Fn hipPointerGetAttribute_fn = load_symbol<Fn>("hipPointerGetAttribute");
+    if (!hipPointerGetAttribute_fn) {
+        if (memTypeOut) *memTypeOut = hipMemoryTypeHost;
+        return -1;
+    }
+    (void)hipPointerGetAttribute_fn(&dev, HIP_POINTER_ATTRIBUTE_DEVICE_ORDINAL, const_cast<void*>(p));
+    (void)hipPointerGetAttribute_fn(&mtInt, HIP_POINTER_ATTRIBUTE_MEMORY_TYPE, const_cast<void*>(p));
     if (memTypeOut) *memTypeOut = static_cast<hipMemoryType>(mtInt);
     return dev;
 }
