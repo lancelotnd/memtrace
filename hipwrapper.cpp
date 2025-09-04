@@ -38,8 +38,8 @@ static inline int pointer_device(const void* p, hipMemoryType* memTypeOut = null
     int dev = -1;
     int mtInt = (int)hipMemoryTypeHost;
     // Query device ordinal and memory type via attribute API (works across HIP versions)
-    (void)hipPointerGetAttribute(&dev, HIP_POINTER_ATTRIBUTE_DEVICE_ORDINAL, p);
-    (void)hipPointerGetAttribute(&mtInt, HIP_POINTER_ATTRIBUTE_MEMORY_TYPE, p);
+    (void)hipPointerGetAttribute(&dev, HIP_POINTER_ATTRIBUTE_DEVICE_ORDINAL, const_cast<void*>(p));
+    (void)hipPointerGetAttribute(&mtInt, HIP_POINTER_ATTRIBUTE_MEMORY_TYPE, const_cast<void*>(p));
     if (memTypeOut) *memTypeOut = static_cast<hipMemoryType>(mtInt);
     return dev;
 }
