@@ -4,10 +4,10 @@ lttng destroy
 lttng create $mydate
 lttng enable-channel --userspace --blocking-timeout=inf blocking-channel
 cd ../
-lttng enable-event -c blocking-channel -u lttng_ust_libc:malloc
-lttng enable-event -c blocking-channel -u lttng_ust_libc:calloc
-lttng enable-event -c blocking-channel -u lttng_ust_libc:free
-lttng enable-event -c blocking-channel -u lttng_ust_libc:realloc 
+#lttng enable-event -c blocking-channel -u lttng_ust_libc:malloc
+#lttng enable-event -c blocking-channel -u lttng_ust_libc:calloc
+#lttng enable-event -c blocking-channel -u lttng_ust_libc:free
+#lttng enable-event -c blocking-channel -u lttng_ust_libc:realloc 
 lttng enable-event -c blocking-channel -u hiptrace*
 cd -
 lttng add-context -c blocking-channel -u -t vpid -t vtid
